@@ -1,8 +1,8 @@
-# [Noisy lines](https://anvaka.github.io/noisylines/)
+# Noisy lines
 
-This is rather simple application of https://github.com/anvaka/streamlines library to perlin noise.
+[This](https://anvaka.github.io/noisylines/) is rather simple application of [anvaka/streamlines](https://github.com/anvaka/streamlines) library to Perlin noise.
 
-![noisy lines](https://i.imgur.com/MvSBpOY.gif)
+[![noisy lines](https://i.imgur.com/MvSBpOY.gif)](https://anvaka.github.io/noisylines/)
 
 # How does it work?
 
