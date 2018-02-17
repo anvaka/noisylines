@@ -8,20 +8,9 @@ var height = canvas.height = window.innerHeight;
 var ctx = canvas.getContext('2d');
 
 var boundingBox = {left: 1, top: 1, width: 10, height: 10};
-
 var genState, sc;
 
-var sc;
-
 restart();
-
-function fadeout() {
-  // wait a bit before switching to next.
-  setTimeout(function() {
-    canvas.classList.add('hide-opacity');
-    setTimeout(restart, 1000);
-  }, 5000);
-}
 
 function restart() {
   width = canvas.width = window.innerWidth;
@@ -29,13 +18,17 @@ function restart() {
   ctx.clearRect(0, 0, width, height);
   canvas.classList.remove('hide-opacity');
   genState = generateRandomState()
+
+  // TODO: This may need to depend on screen size/device performance.
+  var dSep = 0.01 + Math.random() / 100;
   var streamLineGeneratorOptions = {
     vectorField: genState.vectorField,
     boundingBox: boundingBox,
     stepsPerIteration: 1000,
+    maxTimePerIteration: 32,
     timeStep: 0.01,
-    dSep: 0.01 + Math.random() / 100,
-    dTest: 0.0025,
+    dSep: dSep,
+    dTest: dSep *  0.25,
     onPointAdded: onPointAdded,
   };
 
@@ -95,9 +88,13 @@ function generateRandomState() {
   }
 }
 
-
-var frameNumber = 0;
-setInterval(() => frameNumber += 1, 500);
+function fadeout() {
+  // wait a bit before switching to next.
+  setTimeout(function() {
+    canvas.classList.add('hide-opacity');
+    setTimeout(restart, 1000);
+  }, 5000);
+}
 
 function onPointAdded(a, b) {
   ctx.beginPath();
@@ -108,7 +105,6 @@ function onPointAdded(a, b) {
   ctx.lineTo(b.x, b.y);
   ctx.stroke();
   ctx.closePath();
-  return true;
 }
 
 function transform(pt) {

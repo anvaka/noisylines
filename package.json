@@ -18,6 +18,6 @@
   },
   "homepage": "https://github.com/anvaka/noisylines#readme",
   "dependencies": {
-    "@anvaka/streamlines": "^1.0.2"
+    "@anvaka/streamlines": "^1.1.0"
   }
 }
