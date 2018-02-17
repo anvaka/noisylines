@@ -1,0 +1,23 @@
+{
+  "name": "noisylines",
+  "version": "1.0.0",
+  "description": "A simple project that uses streamlines to track noise",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "browserify index.js > bundle.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anvaka/noisylines.git"
+  },
+  "author": "Andrei Kashcha",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/anvaka/noisylines/issues"
+  },
+  "homepage": "https://github.com/anvaka/noisylines#readme",
+  "dependencies": {
+    "@anvaka/streamlines": "^1.0.2"
+  }
+}
