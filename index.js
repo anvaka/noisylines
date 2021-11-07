@@ -8,7 +8,7 @@ var height = canvas.height = window.innerHeight;
 var ctx = canvas.getContext('2d');
 
 var boundingBox = {left: 1, top: 1, width: 10, height: 10};
-var genState, sc;
+var genState, sc, grid, dSep, dTest;
 
 restart();
 
@@ -20,7 +20,8 @@ function restart() {
   genState = generateRandomState()
 
   // TODO: This may need to depend on screen size/device performance.
-  var dSep = 0.01 + Math.random() / 100;
+  dSep = 0.01 + Math.random() / 100;
+  dTest = dSep *  0.25;
   var streamLineGeneratorOptions = {
     vectorField: genState.vectorField,
     boundingBox: boundingBox,
@@ -28,11 +29,12 @@ function restart() {
     maxTimePerIteration: 32,
     timeStep: 0.01,
     dSep: dSep,
-    dTest: dSep *  0.25,
+    dTest: dTest,
     onPointAdded: onPointAdded,
   };
 
-  sc  = streamlines(streamLineGeneratorOptions)
+  sc = streamlines(streamLineGeneratorOptions)
+  grid = sc.getGrid();
   sc.run().then(fadeout);
 }
 

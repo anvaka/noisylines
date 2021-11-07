@@ -1,4 +1,4 @@
-(function(){function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s}return e})()({1:[function(require,module,exports){
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var Noise = require('./lib/noise');
 var streamlines = require('@anvaka/streamlines');
 
@@ -9,7 +9,7 @@ var height = canvas.height = window.innerHeight;
 var ctx = canvas.getContext('2d');
 
 var boundingBox = {left: 1, top: 1, width: 10, height: 10};
-var genState, sc;
+var genState, sc, grid, dSep, dTest;
 
 restart();
 
@@ -21,7 +21,8 @@ function restart() {
   genState = generateRandomState()
 
   // TODO: This may need to depend on screen size/device performance.
-  var dSep = 0.01 + Math.random() / 100;
+  dSep = 0.01 + Math.random() / 100;
+  dTest = dSep *  0.25;
   var streamLineGeneratorOptions = {
     vectorField: genState.vectorField,
     boundingBox: boundingBox,
@@ -29,11 +30,12 @@ function restart() {
     maxTimePerIteration: 32,
     timeStep: 0.01,
     dSep: dSep,
-    dTest: dSep *  0.25,
+    dTest: dTest,
     onPointAdded: onPointAdded,
   };
 
-  sc  = streamlines(streamLineGeneratorOptions)
+  sc = streamlines(streamLineGeneratorOptions)
+  grid = sc.getGrid();
   sc.run().then(fadeout);
 }
 
@@ -191,50 +193,68 @@ var STATE_SEED_STREAMLINE = 4;
 
 function computeStreamlines(protoOptions) {
   var options = Object.create(null);
-  if (!protoOptions) throw new Error('Configuration is required to compute streamlines');
+  if (!protoOptions)
+    throw new Error('Configuration is required to compute streamlines');
   if (!protoOptions.boundingBox) {
     console.warn('No bounding box passed to streamline. Creating default one');
-    options.boundingBox = {left: -5, top: -5, width: 10, height: 10};
+    options.boundingBox = { left: -5, top: -5, width: 10, height: 10 };
   } else {
-    options.boundingBox = {}
+    options.boundingBox = {};
     Object.assign(options.boundingBox, protoOptions.boundingBox);
   }
 
   normalizeBoundingBox(options.boundingBox);
 
-  var boundingBox = options.boundingBox
+  var boundingBox = options.boundingBox;
   options.vectorField = protoOptions.vectorField;
   options.onStreamlineAdded = protoOptions.onStreamlineAdded;
   options.onPointAdded = protoOptions.onPointAdded;
+  options.forwardOnly = protoOptions.forwardOnly;
 
   if (!protoOptions.seed) {
     options.seed = new Vector(
       Math.random() * boundingBox.width + boundingBox.left,
       Math.random() * boundingBox.height + boundingBox.top
     );
+  } else if (Array.isArray(protoOptions.seed)) {
+    var seed = protoOptions.seed.shift();
+    options.seed = new Vector(seed.x, seed.y);
+    options.seedArray = protoOptions.seed;
   } else {
     options.seed = new Vector(protoOptions.seed.x, protoOptions.seed.y);
   }
 
   // Separation between streamlines. Naming according to the paper.
-  options.dSep = protoOptions.dSep > 0 ? protoOptions.dSep : 1./Math.max(boundingBox.width, boundingBox.height);
+  options.dSep =
+    protoOptions.dSep > 0
+      ? protoOptions.dSep
+      : 1 / Math.max(boundingBox.width, boundingBox.height);
 
   // When should we stop integrating a streamline.
-  options.dTest = protoOptions.dTest > 0 ? protoOptions.dTest : options.dSep * 0.5;
+  options.dTest =
+    protoOptions.dTest > 0 ? protoOptions.dTest : options.dSep * 0.5;
 
   // Lookup grid helps to quickly tell if there are points nearby
   var grid = createLookupGrid(boundingBox, options.dSep);
 
   // Integration time step.
   options.timeStep = protoOptions.timeStep > 0 ? protoOptions.timeStep : 0.01;
-  options.stepsPerIteration = protoOptions.stepsPerIteration > 0 ? protoOptions.stepsPerIteration : 10;
-  options.maxTimePerIteration = protoOptions.maxTimePerIteration > 0 ? protoOptions.maxTimePerIteration : 1000;
+  options.stepsPerIteration =
+    protoOptions.stepsPerIteration > 0 ? protoOptions.stepsPerIteration : 10;
+  options.maxTimePerIteration =
+    protoOptions.maxTimePerIteration > 0
+      ? protoOptions.maxTimePerIteration
+      : 1000;
 
   var stepsPerIteration = options.stepsPerIteration;
   var resolve;
   var state = STATE_INIT;
   var finishedStreamlineIntegrators = [];
-  var streamlineIntegrator = createStreamlineIntegrator(options.seed, grid, options);
+  var streamlineIntegrator = createStreamlineIntegrator(
+    options.seed,
+    grid,
+    options
+  );
   var disposed = false;
   var running = false;
   var nextTimeout;
@@ -243,15 +263,20 @@ function computeStreamlines(protoOptions) {
 
   return {
     run: run,
+    getGrid: getGrid,
     dispose: dispose
-  } 
+  };
+  
+  function getGrid() {
+    return grid;
+  }
 
   function run() {
     if (running) return;
     running = true;
     nextTimeout = setTimeout(nextStep, 0);
 
-    return new Promise(assignResolve)
+    return new Promise(assignResolve);
   }
 
   function assignResolve(pResolve) {
@@ -297,7 +322,11 @@ function computeStreamlines(protoOptions) {
 
     var validCandidate = currentStreamLine.getNextValidSeed();
     if (validCandidate) {
-      streamlineIntegrator = createStreamlineIntegrator(validCandidate, grid, options);
+      streamlineIntegrator = createStreamlineIntegrator(
+        validCandidate,
+        grid,
+        options
+      );
       state = STATE_STREAMLINE;
     } else {
       finishedStreamlineIntegrators.shift();
@@ -325,13 +354,15 @@ function computeStreamlines(protoOptions) {
     var streamLinePoints = streamlineIntegrator.getStreamline();
     if (streamLinePoints.length > 1) {
       finishedStreamlineIntegrators.push(streamlineIntegrator);
-      if (options.onStreamlineAdded) options.onStreamlineAdded(streamLinePoints, options);
+      if (options.onStreamlineAdded)
+        options.onStreamlineAdded(streamLinePoints, options);
     }
   }
 }
 
 function normalizeBoundingBox(bbox) {
-  var requiredBoxMessage = 'Bounding box {left, top, width, height} is required';
+  var requiredBoxMessage =
+    'Bounding box {left, top, width, height} is required';
   if (!bbox) throw new Error(requiredBoxMessage);
 
   assertNumber(bbox.left, requiredBoxMessage);
@@ -343,12 +374,14 @@ function normalizeBoundingBox(bbox) {
   assertNumber(bbox.width, requiredBoxMessage);
   assertNumber(bbox.height, requiredBoxMessage);
 
-  if (bbox.width <= 0 || bbox.height <= 0) throw new Error('Bounding box cannot be empty');
+  if (bbox.width <= 0 || bbox.height <= 0)
+    throw new Error('Bounding box cannot be empty');
 }
 
 function assertNumber(x, msg) {
   if (typeof x !== 'number' || Number.isNaN(x)) throw new Error(msg);
 }
+
 },{"./lib/Vector":4,"./lib/createLookupGrid":6,"./lib/renderTo":7,"./lib/streamLineIntegrator":9}],4:[function(require,module,exports){
 var classCallCheck = require('./classCheck');
 
@@ -430,6 +463,24 @@ var Cell = function () {
     return false;
   };
 
+  Cell.prototype.getMinDistance = function getMinDistance(x, y) {
+    let minDistance = Infinity;
+
+    if (!this.children) return minDistance;
+
+    for (var i = 0; i < this.children.length; ++i) {
+      var p = this.children[i];
+      var dx = p.x - x,
+          dy = p.y - y;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < minDistance) {
+        minDistance = dist;
+      }
+    }
+
+    return minDistance;
+  }
+
   return Cell;
 }();
 
@@ -443,10 +494,37 @@ function createLookupGrid(bbox, dSep) {
   var api = {
     occupyCoordinates: occupyCoordinates,
     isTaken: isTaken,
-    isOutside: isOutside
+    isOutside: isOutside,
+    findNearest: findNearest
   };
 
   return api;
+
+  function findNearest(x, y) {
+    var cx = gridX(x);
+    var cy = gridY(y);
+    let minDistance = Infinity;
+
+    for (var col = -1; col < 2; ++col) {
+      var currentCellX = cx + col;
+      if (currentCellX < 0 || currentCellX >= cellsCount) continue;
+      
+      var cellRow = cells.get(currentCellX);
+      if (!cellRow) continue;
+
+      for (var row = -1; row < 2; ++row) {
+        var currentCellY = cy + row;
+        if (currentCellY < 0 || currentCellY >= cellsCount) continue;
+
+        var cellCol = cellRow.get(currentCellY);
+        if(!cellCol) continue;
+        let d = cellCol.getMinDistance(x, y);
+        if (d < minDistance) minDistance = d;
+      }
+    }
+
+    return minDistance;
+  }
 
   function isOutside(x, y) {
     return x < bbox.left || x > bbox.left + bbox.width || 
@@ -613,6 +691,12 @@ function createStreamlineIntegrator(start, grid, config) {
       var cx = p.x - v.y * config.dSep;
       var cy = p.y + v.x * config.dSep;
 
+      if (Array.isArray(config.seedArray) && config.seedArray.length > 0) {
+        var seed = config.seedArray.shift();
+        cx = seed.x;
+        cy = seed.y;
+      }
+
       if (!grid.isOutside(cx, cy) && !grid.isTaken(cx, cy, checkDSep)) {
         // this will let us check the other side. When we get back
         // into this method, the point `cx, cy` will be taken (by construction of another streamline)
@@ -652,8 +736,12 @@ function createStreamlineIntegrator(start, grid, config) {
           if (shouldPause) return;
         } else {
           // Reset position to start, and grow backwards:
-          pos = start;
-          state = BACKWARD;
+          if (config.forwardOnly)  {
+            state = DONE;
+          } else {
+            pos = start;
+            state = BACKWARD;
+          }
         }
       } 
       if (state === BACKWARD) {
