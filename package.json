@@ -19,6 +19,6 @@
   },
   "homepage": "https://github.com/anvaka/noisylines#readme",
   "dependencies": {
-    "@anvaka/streamlines": "^1.3.0"
+    "@anvaka/streamlines": "^1.5.0"
   }
 }
