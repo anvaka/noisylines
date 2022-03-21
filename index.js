@@ -98,9 +98,12 @@ function fadeout() {
   }, 5000);
 }
 
-function onPointAdded(a, b) {
+function onPointAdded(a, b, cfg, all) {
   ctx.beginPath();
-  ctx.strokeStyle = genState.getColor(a, b),
+  if (!all.color) {
+    all.color = getNiceColor();
+  }
+  ctx.strokeStyle = all.color;// genState.getColor(a, b),
   a = transform(a);
   b = transform(b);
   ctx.moveTo(a.x, a.y);
@@ -118,4 +121,8 @@ function transform(pt) {
     x: tx * width,
     y: (1 - ty) * height
   }
+}
+
+function getNiceColor() {
+  return 'hsla(' + Math.round(Math.random() * 360) + ', 53%, 68%, 0.51)';
 }

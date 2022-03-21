@@ -99,9 +99,12 @@ function fadeout() {
   }, 5000);
 }
 
-function onPointAdded(a, b) {
+function onPointAdded(a, b, cfg, all) {
   ctx.beginPath();
-  ctx.strokeStyle = genState.getColor(a, b),
+  if (!all.color) {
+    all.color = getNiceColor();
+  }
+  ctx.strokeStyle = all.color;// genState.getColor(a, b),
   a = transform(a);
   b = transform(b);
   ctx.moveTo(a.x, a.y);
@@ -121,6 +124,9 @@ function transform(pt) {
   }
 }
 
+function getNiceColor() {
+  return 'hsla(' + Math.round(Math.random() * 360) + ', 53%, 68%, 0.51)';
+}
 },{"./lib/noise":2,"@anvaka/streamlines":3}],2:[function(require,module,exports){
 /**
  * (C) 2018 by Gerard Ferrandez (https://codepen.io/ge1doot/pen/GQobbq)
@@ -805,14 +811,14 @@ function createStreamlineIntegrator(start, grid, config) {
   function notifyPointAdded(point) {
     var shouldPause = false;
     if (config.onPointAdded) {
-      shouldPause = config.onPointAdded(point, points[state === FORWARD ? points.length - 2 : 1], config);
+      shouldPause = config.onPointAdded(point, points[state === FORWARD ? points.length - 2 : 1], config, points);
     } 
 
     return shouldPause;
   }
 
   function normalizedVectorField(p) {
-    var p = config.vectorField(p);
+    var p = config.vectorField(p, points, state === DONE);
     if (!p) return; // Assume singularity
     if (Number.isNaN(p.x) || Number.isNaN(p.y)) return; // Not defined. e.g. Math.log(-1);
 
